@@ -26,10 +26,13 @@ elseif(ANDROID)
 else()
 	#PLATFORM_BITS
 	#PLATFORM_VERSION
+	#PLATFORM_ARCH
 	find_program(CMAKE_UNAME uname /bin /usr/bin /usr/local/bin)
 	if(CMAKE_UNAME)
 		execute_process(COMMAND ${CMAKE_UNAME} "-m"
 				OUTPUT_VARIABLE OS_MACHINE)
+		#delete tailing \n
+		string(REGEX REPLACE "(.*)\n" "\\1" OS_MACHINE ${OS_MACHINE})
 		message(OS_MACHINE " = ${OS_MACHINE}")
 		string(REGEX MATCH ".*64.*" OS_64BITS ${OS_MACHINE})
 		message(OS_64BITS " = ${OS_64BITS}")
@@ -41,15 +44,18 @@ else()
 			option(BUILD_32_BITS "build for 32 bit" ON)
 		endif(OS_64BITS)
 
+		set(PLATFORM_ARCH ${OS_MACHINE})
+		message(PLATFORM_ARCH " = ${PLATFORM_ARCH}")
+
 		execute_process(COMMAND ${CMAKE_UNAME} "-r"
 				OUTPUT_VARIABLE OS_KRELEASE)
+		#delete tailing \n
+		string(REGEX REPLACE "(.*)\n" "\\1" OS_KRELEASE ${OS_KRELEASE})
 		message(OS_KRELEASE " = ${OS_KRELEASE}")
 		string(REGEX MATCH "^[0-9]*\.[0-9]*\.[0-9]*" PLATFORM_VERSION ${OS_KRELEASE})
 		message(PLATFORM_VERSION " = ${PLATFORM_VERSION}")
 	else(CMAKE_UNAME)
-		message("build 32 bits")
-		option(BUILD_32_BITS "build for 32 bit" ON)
-		set(PLATFORM_VERSION "")
+                message(FATAL_ERROR  "Can't find command uname")
 	endif(CMAKE_UNAME)
 	if(BUILD_32_BITS)
 		set(PLATFORM_BITS 32)
@@ -88,11 +94,13 @@ else()
 			else()
 				set(PLATFORM_NAME "ubuntu-${PLATFORM_VERSION}-${PLATFORM_BITS}")
 			endif()
+		elseif(OS_ISSUE_NAME STREQUAL "uos")
+			set(PLATFORM_NAME "uos-${PLATFORM_ARCH}")
 		else()
-			set(PLATFORM_NAME "ubuntu-18.04-${PLATFORM_BITS}")
+			message(FATAL_ERROR  "Unknown platform ${OS_ISSUE_NAME}")
 		endif()
 	else(OS_ISSUE)
-		set(PLATFORM_NAME "ubuntu-18.04-${PLATFORM_BITS}")
+		message(FATAL_ERROR  "Can't find file: /etc/issue")
 	endif(OS_ISSUE)
 	message(PLATFORM_NAME " = ${PLATFORM_NAME}")
 
